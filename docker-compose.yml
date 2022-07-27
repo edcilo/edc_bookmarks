@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+  edc_bookmark:
+    container_name: edc_bookmark
+    build: .
+    ports:
+    - 8080:5000
+    volumes:
+    - ./:/app
+    environment:
+    - FLASK_ENV=development
+    depends_on:
+    - edc_bookmarks_psql
+    networks:
+    - edcBookmarksNet
+
+  edc_bookmarks_psql:
+    container_name: edc_bookmarks_psql
+    image: postgres
+    ports:
+    - 5432:5432
+    volumes:
+    - edcBookmarksDbVol:/var/lib/postgresql/data
+    environment:
+    - POSTGRES_PASSWORD=secret
+    - POSTGRES_USER=postgres
+    - POSTGRES_DB=edc_bookmarks
+    networks:
+    - edcBookmarksNet
+
+
+networks:
+  edcBookmarksNet:
+    driver: "bridge"
+
+
+volumes:
+  edcBookmarksDbVol:
+    driver: local
