@@ -1,6 +1,7 @@
 import abc
 from sqlalchemy import or_
 from ms.db import db
+from ms.helpers import time
 
 
 class Repository(abc.ABC):
@@ -38,6 +39,8 @@ class Repository(abc.ABC):
         return q.paginate(page, per_page=per_page) if paginate else q.all()
 
     def find(self, id, fail=True):
+        if isinstance(id, self._model):
+            return id
         q = self._model.query.filter_by(id=id)
         return q.first_or_404() if fail else q.first()
 
@@ -56,6 +59,24 @@ class Repository(abc.ABC):
         model = self.find(id, fail=fail)
         if model is not None:
             model.update(data)
+            self.db_save(model)
+        return model
+
+    def soft_delete(self, id, fail=True):
+        model = self.find(id, fail=fail)
+        if not hasattr(model, 'deleted_at'):
+            raise Exception('Model does not have a deleted_at column')
+        if model is not None:
+            model.deleted_at = time.now()
+            self.db_save(model)
+        return model
+
+    def restore(self, id, fail=True):
+        model = self.find(id, fail=fail)
+        if not hasattr(model, 'deleted_at'):
+            raise Exception('Model does not have a deleted_at column')
+        if model is not None:
+            model.deleted_at = None
             self.db_save(model)
         return model
 
